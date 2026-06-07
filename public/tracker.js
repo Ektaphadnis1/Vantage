@@ -46,6 +46,9 @@ async function getLocation() {
     }
 }
 
+// LIVE SERVER URL - CHANGE THIS TO YOUR RENDER URL
+const API_BASE_URL = 'https://vantage-dashboard-skto.onrender.com';
+
 // Track when visitor arrives
 async function trackVisit() {
     const sessionId = getSessionId();
@@ -54,13 +57,13 @@ async function trackVisit() {
     const browser = getBrowserName();
     const location = await getLocation();
     
-    fetch(`http://localhost:3000/track?sessionId=${sessionId}&source=${source}&location=${location}&device=${device}&browser=${browser}`);
+    fetch(`${API_BASE_URL}/track?sessionId=${sessionId}&source=${source}&location=${location}&device=${device}&browser=${browser}`);
 }
 
 // Track when visitor leaves
 function trackLeave() {
     const sessionId = getSessionId();
-    fetch(`http://localhost:3000/leave?sessionId=${sessionId}`);
+    fetch(`${API_BASE_URL}/leave?sessionId=${sessionId}`);
 }
 
 // Run tracking
