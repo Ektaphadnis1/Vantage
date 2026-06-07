@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
@@ -8,12 +9,15 @@ const io = socketIo(server);
 
 // Store active sessions
 let activeSessions = 0;
-
-// Store session details (for locations, devices, etc.)
 let sessions = {};
 
-// Serve static files (HTML, CSS, JS)
-app.use(express.static('public'));
+// Serve static files from 'public' folder
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Also serve HTML files directly from root if needed
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
 
 // API endpoint for tracking script to call when someone visits
 app.get('/track', (req, res) => {
@@ -23,7 +27,6 @@ app.get('/track', (req, res) => {
     const device = req.query.device || 'Unknown';
     const browser = req.query.browser || 'Unknown';
     
-    // Check if this is a new session
     if (!sessions[sessionId]) {
         sessions[sessionId] = {
             source: source,
@@ -34,7 +37,6 @@ app.get('/track', (req, res) => {
         };
         activeSessions++;
         
-        // Broadcast updated count to all connected dashboards
         io.emit('visitor-count', activeSessions);
         io.emit('session-details', sessions);
     }
@@ -56,7 +58,12 @@ app.get('/leave', (req, res) => {
     res.send('ok');
 });
 
-// Start server
-server.listen(3000, () => {
-    console.log('Server running on http://localhost:3000');
+// Make sure tracker.js is accessible
+app.get('/tracker.js', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'tracker.js'));
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
 });
