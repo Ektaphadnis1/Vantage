@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Live Visitor Dashboard</title>
     <script src="/socket.io/socket.io.js"></script>
-    
+
     <!-- Leaflet CSS and JS for map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -15,23 +16,27 @@
             margin: 0;
             padding: 20px;
         }
+
         .container {
             max-width: 1400px;
             margin: auto;
         }
+
         .card {
             background: white;
             border-radius: 10px;
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
+
         .big-number {
             font-size: 72px;
             font-weight: bold;
             color: #007bff;
             text-align: center;
         }
+
         .card-title {
             font-size: 18px;
             font-weight: bold;
@@ -39,43 +44,54 @@
             border-bottom: 2px solid #007bff;
             padding-bottom: 5px;
         }
+
         .row {
             display: flex;
             gap: 20px;
             flex-wrap: wrap;
         }
+
         .col {
             flex: 1;
             min-width: 250px;
         }
+
         .full-width {
             width: 100%;
         }
+
         .stat-value {
             font-size: 24px;
             font-weight: bold;
         }
+
         .stat-label {
             color: #666;
             margin-top: 5px;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
         }
-        th, td {
+
+        th,
+        td {
             padding: 8px;
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
+
         #map {
             height: 400px;
             width: 100%;
             border-radius: 8px;
         }
+
         .map-container {
             position: relative;
         }
+
         .map-note {
             font-size: 12px;
             color: #666;
@@ -84,23 +100,24 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>📊 Live Visitor Dashboard</h1>
-        
+
         <!-- Active Sessions Card -->
         <div class="card">
             <div class="card-title">👥 Active Sessions Right Now</div>
             <div class="big-number" id="activeCount">0</div>
         </div>
-        
+
         <!-- Map Card -->
         <div class="card">
             <div class="card-title">🌍 Real-Time Visitor Locations Map</div>
             <div id="map"></div>
             <div class="map-note">📍 Each marker shows a visitor's approximate location</div>
         </div>
-        
+
         <div class="row">
             <!-- Traffic Sources Card -->
             <div class="col">
@@ -109,7 +126,7 @@
                     <div id="sourcesList">Loading...</div>
                 </div>
             </div>
-            
+
             <!-- Locations List Card -->
             <div class="col">
                 <div class="card">
@@ -118,7 +135,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="row">
             <!-- Devices Card -->
             <div class="col">
@@ -127,7 +144,7 @@
                     <div id="devicesList">Loading...</div>
                 </div>
             </div>
-            
+
             <!-- Browsers Card -->
             <div class="col">
                 <div class="card">
@@ -137,12 +154,12 @@
             </div>
         </div>
     </div>
-    
+
     <script>
         const socket = io();
         let map;
         let markers = {}; // Store markers by sessionId
-        
+
         // Initialize map (centered on world view)
         function initMap() {
             map = L.map('map').setView([20, 0], 2);
@@ -150,7 +167,7 @@
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
         }
-        
+
         // Get coordinates from location string (simplified mapping)
         function getCoordinatesFromLocation(location) {
             // Default to India center if location unknown
@@ -166,14 +183,14 @@
                 'Jaipur': [26.9124, 75.7873],
                 'Lucknow': [26.8467, 80.9462]
             };
-            
+
             // Check if location contains any of the known cities
             for (const [city, coords] of Object.entries(locationMap)) {
                 if (location.includes(city)) {
                     return coords;
                 }
             }
-            
+
             // Check for countries
             if (location.includes('United States')) return [37.0902, -95.7129];
             if (location.includes('United Kingdom')) return [55.3781, -3.4360];
@@ -185,11 +202,11 @@
             if (location.includes('China')) return [35.8617, 104.1954];
             if (location.includes('Singapore')) return [1.3521, 103.8198];
             if (location.includes('UAE') || location.includes('Dubai')) return [23.4241, 53.8478];
-            
+
             // Default: center of India
             return [20.5937, 78.9629];
         }
-        
+
         // Update map with current visitors
         function updateMap(sessions) {
             // Remove all existing markers
@@ -197,31 +214,31 @@
                 map.removeLayer(markers[id]);
             }
             markers = {};
-            
+
             // Add markers for each active session
             let locationCounts = {};
-            
+
             Object.entries(sessions).forEach(([sessionId, session]) => {
                 const location = session.location;
                 if (location && location !== 'Unknown') {
                     locationCounts[location] = (locationCounts[location] || 0) + 1;
                 }
             });
-            
+
             // Add a marker for each unique location
             for (const [location, count] of Object.entries(locationCounts)) {
                 const coords = getCoordinatesFromLocation(location);
                 const marker = L.marker(coords).addTo(map);
-                
+
                 // Add popup with visitor info
                 marker.bindPopup(`
                     <b>📍 ${location}</b><br>
                     👥 ${count} active visitor${count > 1 ? 's' : ''}
                 `);
-                
+
                 markers[location] = marker;
             }
-            
+
             // If no markers, show a default message
             if (Object.keys(markers).length === 0) {
                 // Add a subtle hint marker
@@ -230,12 +247,12 @@
                 markers['hint'] = hintMarker;
             }
         }
-        
+
         // Listen for visitor count updates
         socket.on('visitor-count', (count) => {
             document.getElementById('activeCount').innerText = count;
         });
-        
+
         // Listen for session details updates
         socket.on('session-details', (sessions) => {
             updateTrafficSources(sessions);
@@ -244,17 +261,52 @@
             updateBrowsers(sessions);
             updateMap(sessions);
         });
-        
+
+        // Handle socket disconnection
+        socket.on('disconnect', () => {
+            console.log('⚠️ Disconnected from server. Attempting to reconnect...');
+            // Optional: Show a warning to the user
+            const activeCountElement = document.getElementById('activeCount');
+            if (activeCountElement) {
+                activeCountElement.style.color = '#ff4444';
+            }
+        });
+
+        // Handle socket reconnection
+        socket.on('connect', () => {
+            console.log('✅ Reconnected to server successfully!');
+            // Reset the color
+            const activeCountElement = document.getElementById('activeCount');
+            if (activeCountElement) {
+                activeCountElement.style.color = '#007bff';
+            }
+            // Request fresh data on reconnect
+            socket.emit('request-initial');
+        });
+
+        // Handle reconnection attempts
+        socket.io.on('reconnect_attempt', (attemptNumber) => {
+            console.log(`🔄 Reconnection attempt ${attemptNumber}`);
+        });
+
+        socket.io.on('reconnect', () => {
+            console.log('🎉 Successfully reconnected!');
+        });
+
+        socket.io.on('reconnect_error', (error) => {
+            console.error('❌ Reconnection error:', error);
+        });
+
         function updateTrafficSources(sessions) {
             const sources = {};
             Object.values(sessions).forEach(session => {
                 const source = session.source;
                 sources[source] = (sources[source] || 0) + 1;
             });
-            
-            let html = '<table>';
+
+            let html = '的人';
             if (Object.keys(sources).length === 0) {
-                html += '<tr><td>No visitors yet</td></tr>';
+                html += '<tr><td>No visitors yet</td>td';
             } else {
                 for (const [source, count] of Object.entries(sources)) {
                     html += `<tr><td>${source}</td><td>${count} visitors</td></tr>`;
@@ -263,18 +315,18 @@
             html += '</table>';
             document.getElementById('sourcesList').innerHTML = html;
         }
-        
+
         function updateLocations(sessions) {
             const locations = {};
             Object.values(sessions).forEach(session => {
                 const location = session.location;
                 locations[location] = (locations[location] || 0) + 1;
             });
-            
+
             // Sort by count and get top 5
-            const sorted = Object.entries(locations).sort((a,b) => b[1] - a[1]).slice(0, 5);
-            
-            let html = '的人';
+            const sorted = Object.entries(locations).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+            let html = '<table>';
             if (sorted.length === 0) {
                 html += '<tr><td>No visitors yet</td></tr>';
             } else {
@@ -285,14 +337,14 @@
             html += '</table>';
             document.getElementById('locationsList').innerHTML = html;
         }
-        
+
         function updateDevices(sessions) {
             const devices = {};
             Object.values(sessions).forEach(session => {
                 const device = session.device;
                 devices[device] = (devices[device] || 0) + 1;
             });
-            
+
             let html = '<table>';
             if (Object.keys(devices).length === 0) {
                 html += '<tr><td>No visitors yet</td></tr>';
@@ -304,15 +356,15 @@
             html += '</table>';
             document.getElementById('devicesList').innerHTML = html;
         }
-        
+
         function updateBrowsers(sessions) {
             const browsers = {};
             Object.values(sessions).forEach(session => {
                 const browser = session.browser;
                 browsers[browser] = (browsers[browser] || 0) + 1;
             });
-            
-            let html = '的人';
+
+            let html = '<table>';
             if (Object.keys(browsers).length === 0) {
                 html += '<tr><td>No visitors yet</td></tr>';
             } else {
@@ -323,12 +375,36 @@
             html += '</table>';
             document.getElementById('browsersList').innerHTML = html;
         }
-        
+
         // Initialize map when page loads
         initMap();
-        
+
         // Request initial data
         socket.emit('request-initial');
+
+        // Optional: Add manual refresh button functionality
+        function manualRefresh() {
+            console.log('Manual refresh requested');
+            socket.emit('request-initial');
+        }
+
+        // Optional: Display connection status
+        function updateConnectionStatus(status) {
+            const statusElement = document.getElementById('connectionStatus');
+            if (statusElement) {
+                statusElement.innerText = status;
+                statusElement.style.color = status === 'Connected' ? '#00aa00' : '#ff4444';
+            }
+        }
+
+        socket.on('connect', () => {
+            updateConnectionStatus('Connected');
+        });
+
+        socket.on('disconnect', () => {
+            updateConnectionStatus('Disconnected');
+        });
     </script>
 </body>
+
 </html>

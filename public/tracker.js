@@ -1,9 +1,9 @@
 // Generate a unique ID for this visitor
 function getSessionId() {
-    let id = localStorage.getItem('sessionId');
+    let id = sessionStorage.getItem('sessionId');
     if (!id) {
-        id = 'session_' + Date.now() + '_' + Math.random();
-        localStorage.setItem('sessionId', id);
+        id = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        sessionStorage.setItem('sessionId', id);
     }
     return id;
 }
@@ -13,7 +13,7 @@ function getTrafficSource() {
     const referrer = document.referrer;
     if (!referrer) return 'direct';
     if (referrer.includes('google')) return 'organic';
-    if (referrer.includes('facebook') || referrer.includes('linkedin') || referrer.includes('twitter')) return 'social';
+    if (referrer.includes('facebook') || referrer.includes('linkedin') || referrer.includes('twitter') || referrer.includes('instagram')) return 'social';
     return 'referral';
 }
 
@@ -32,10 +32,11 @@ function getBrowserName() {
     if (ua.includes('Firefox')) return 'Firefox';
     if (ua.includes('Safari')) return 'Safari';
     if (ua.includes('Edge')) return 'Edge';
+    if (ua.includes('Opera')) return 'Opera';
     return 'Other';
 }
 
-// Get location from IP (simplified - in production use a real IP geolocation API)
+// Get location from IP
 async function getLocation() {
     try {
         const response = await fetch('https://ipapi.co/json/');
@@ -46,7 +47,7 @@ async function getLocation() {
     }
 }
 
-// LIVE SERVER URL - CHANGE THIS TO YOUR RENDER URL
+// LIVE SERVER URL
 const API_BASE_URL = 'https://vantage-dashboard-skto.onrender.com';
 
 // Track when visitor arrives
@@ -57,7 +58,7 @@ async function trackVisit() {
     const browser = getBrowserName();
     const location = await getLocation();
     
-    fetch(`${API_BASE_URL}/track?sessionId=${sessionId}&source=${source}&location=${location}&device=${device}&browser=${browser}`);
+    await fetch(`${API_BASE_URL}/track?sessionId=${sessionId}&source=${source}&location=${location}&device=${device}&browser=${browser}`);
 }
 
 // Track when visitor leaves
@@ -66,8 +67,52 @@ function trackLeave() {
     fetch(`${API_BASE_URL}/leave?sessionId=${sessionId}`);
 }
 
-// Run tracking
-trackVisit();
+// Send heartbeat to keep session alive (every 30 seconds)
+let heartbeatInterval;
+function startHeartbeat() {
+    heartbeatInterval = setInterval(() => {
+        const sessionId = getSessionId();
+        fetch(`${API_BASE_URL}/heartbeat?sessionId=${sessionId}`);
+    }, 30000);
+}
 
-// Track leave when closing page/tab
-window.addEventListener('beforeunload', trackLeave);
+function stopHeartbeat() {
+    if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+    }
+}
+
+// Detect page refresh vs close
+let isRefreshing = false;
+
+window.addEventListener('beforeunload', () => {
+    isRefreshing = true;
+    trackLeave();
+    stopHeartbeat();
+});
+
+// Handle page visibility change (tab switch vs close)
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        // Tab hidden - don't leave yet, just reduce heartbeat
+        console.log('Tab hidden');
+    } else {
+        // Tab visible again - send heartbeat to confirm still active
+        const sessionId = getSessionId();
+        fetch(`${API_BASE_URL}/heartbeat?sessionId=${sessionId}`);
+    }
+});
+
+// Handle page unload (refresh or close)
+window.addEventListener('pagehide', () => {
+    trackLeave();
+    stopHeartbeat();
+});
+
+// Initialize tracking
+async function init() {
+    await trackVisit();
+    startHeartbeat();
+}
+
+init();
