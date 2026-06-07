@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vantage Electronics | Premium Apple Products</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="/tracker.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo">Vantage Electronics</h1>
+            <div class="cart-icon" id="cartIcon">
+                🛒 <span id="cartCount">0</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="hero">
+            <h2 class="hero-title">Premium Apple Products</h2>
+            <p class="hero-subtitle">Experience innovation at its finest</p>
+        </div>
+
+        <div class="products-grid" id="productsGrid"></div>
+    </main>
+
+    <!-- Shopping Cart Modal -->
+    <div id="cartModal" class="cart-modal">
+        <div class="cart-modal-content">
+            <div class="cart-modal-header">
+                <h2>Your Cart 🛒</h2>
+                <span class="cart-close">&times;</span>
+            </div>
+            <div class="cart-items" id="cartItems">
+                <p>Your cart is empty</p>
+            </div>
+            <div class="cart-total">
+                <strong>Total: </strong><span id="cartTotal">₹0</span>
+            </div>
+            <button class="checkout-btn" id="checkoutBtn">Proceed to Checkout</button>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2024 Vantage Electronics. All rights reserved.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
