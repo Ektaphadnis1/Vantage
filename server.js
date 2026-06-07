@@ -16,27 +16,38 @@ const io = socketIo(server, {
 let sessions = {};
 let activeSessions = 0;
 
-// Session timeout (30 minutes = 1800000 ms)
-const SESSION_TIMEOUT = 30 * 60 * 1000;
+// Session timeout (2 minutes for testing, change to 30 minutes for production)
+// Using 2 minutes so you can see it work faster
+const SESSION_TIMEOUT = 2 * 60 * 1000; // 2 minutes
 
-// Clean up expired sessions every minute
+// Clean up expired sessions every 10 seconds (more aggressive cleanup)
 setInterval(() => {
     const now = Date.now();
     let changed = false;
+    let expiredSessions = [];
     
+    // Find expired sessions
     Object.keys(sessions).forEach(sessionId => {
-        if (now - sessions[sessionId].lastHeartbeat > SESSION_TIMEOUT) {
-            delete sessions[sessionId];
-            activeSessions--;
-            changed = true;
+        const lastHeartbeat = sessions[sessionId].lastHeartbeat || sessions[sessionId].startTime;
+        if (now - lastHeartbeat > SESSION_TIMEOUT) {
+            expiredSessions.push(sessionId);
         }
     });
     
+    // Remove expired sessions
+    expiredSessions.forEach(sessionId => {
+        delete sessions[sessionId];
+        activeSessions--;
+        changed = true;
+        console.log(`Session expired: ${sessionId}`);
+    });
+    
     if (changed) {
+        console.log(`Active sessions: ${activeSessions}`);
         io.emit('visitor-count', activeSessions);
         io.emit('session-details', sessions);
     }
-}, 60000);
+}, 10000); // Check every 10 seconds
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -45,31 +56,33 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
-// Track new session
+// Track new session or update existing
 app.get('/track', (req, res) => {
     const sessionId = req.query.sessionId;
-    const source = req.query.source || 'direct';
+    const source = req.query.source || 'Direct';
     const location = req.query.location || 'Unknown';
     const device = req.query.device || 'Unknown';
     const browser = req.query.browser || 'Unknown';
     
-    if (!sessions[sessionId]) {
-        sessions[sessionId] = {
-            source: source,
-            location: location,
-            device: device,
-            browser: browser,
-            startTime: Date.now(),
-            lastHeartbeat: Date.now()
-        };
+    const isNewSession = !sessions[sessionId];
+    
+    sessions[sessionId] = {
+        source: source,
+        location: location,
+        device: device,
+        browser: browser,
+        startTime: sessions[sessionId]?.startTime || Date.now(),
+        lastHeartbeat: Date.now()
+    };
+    
+    if (isNewSession) {
         activeSessions++;
-        
-        io.emit('visitor-count', activeSessions);
-        io.emit('session-details', sessions);
-    } else {
-        // Update heartbeat
-        sessions[sessionId].lastHeartbeat = Date.now();
+        console.log(`New session: ${sessionId.substring(0, 20)}... Location: ${location}`);
+        console.log(`Total active: ${activeSessions}`);
     }
+    
+    io.emit('visitor-count', activeSessions);
+    io.emit('session-details', sessions);
     
     res.send('ok');
 });
@@ -85,13 +98,14 @@ app.get('/heartbeat', (req, res) => {
     res.send('ok');
 });
 
-// Remove session
+// Manual leave (when tab closes gracefully)
 app.get('/leave', (req, res) => {
     const sessionId = req.query.sessionId;
     
     if (sessions[sessionId]) {
         delete sessions[sessionId];
         activeSessions--;
+        console.log(`Session left: ${sessionId?.substring(0, 20)}... Active: ${activeSessions}`);
         io.emit('visitor-count', activeSessions);
         io.emit('session-details', sessions);
     }
@@ -125,6 +139,11 @@ io.on('connection', (socket) => {
     socket.emit('visitor-count', activeSessions);
     socket.emit('session-details', sessions);
     
+    socket.on('request-initial', () => {
+        socket.emit('visitor-count', activeSessions);
+        socket.emit('session-details', sessions);
+    });
+    
     socket.on('disconnect', () => {
         console.log('Dashboard disconnected');
     });
@@ -133,4 +152,5 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Session timeout: ${SESSION_TIMEOUT / 1000} seconds`);
 });

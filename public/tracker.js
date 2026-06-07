@@ -40,44 +40,11 @@ function getBrowserName() {
 }
 
 // FOR TESTING: Manually set your location
-// Change this to your actual city for testing
 const MANUAL_LOCATION = "Pune, Maharashtra, India";
 
-// Get location from IP with better accuracy
+// Get location
 async function getLocation() {
-    // MANUAL OVERRIDE FOR TESTING
-    // Remove this line when deploying to production
     return MANUAL_LOCATION;
-    
-    /* 
-    // UNCOMMENT THIS FOR PRODUCTION WITH REAL IP DETECTION
-    const apis = [
-        'https://ipapi.co/json/',
-        'https://ipwho.is/',
-        'https://freeipapi.com/api/json/'
-    ];
-    
-    for (const api of apis) {
-        try {
-            const response = await fetch(api);
-            const data = await response.json();
-            
-            let city = data.city || '';
-            let region = data.region || data.state || '';
-            let country = data.country_name || data.country || '';
-            
-            if (city && city !== 'Unknown' && city !== '') {
-                // Clean up city names
-                city = city.replace(' district', '').trim();
-                return `${city}, ${region}, ${country}`;
-            }
-        } catch (error) {
-            console.log(`Location API failed: ${api}`);
-        }
-    }
-    
-    return "Location detection failed";
-    */
 }
 
 // LIVE SERVER URL
@@ -91,7 +58,7 @@ async function trackVisit() {
     const browser = getBrowserName();
     const location = await getLocation();
     
-    console.log(`Tracking: ${sessionId} - ${location} - ${device} - ${source}`);
+    console.log(`Tracking: ${location} - ${device} - ${source}`);
     
     await fetch(`${API_BASE_URL}/track?sessionId=${sessionId}&source=${source}&location=${encodeURIComponent(location)}&device=${device}&browser=${browser}`);
 }
@@ -102,33 +69,58 @@ function trackLeave() {
     fetch(`${API_BASE_URL}/leave?sessionId=${sessionId}`);
 }
 
-// Send heartbeat to keep session alive (every 30 seconds)
+// Send heartbeat every 15 seconds (more frequent)
 let heartbeatInterval;
+let isLeaving = false;
+
 function startHeartbeat() {
     heartbeatInterval = setInterval(() => {
-        const sessionId = getSessionId();
-        fetch(`${API_BASE_URL}/heartbeat?sessionId=${sessionId}`);
-    }, 30000);
+        if (!isLeaving) {
+            const sessionId = getSessionId();
+            fetch(`${API_BASE_URL}/heartbeat?sessionId=${sessionId}`);
+            console.log('Heartbeat sent');
+        }
+    }, 15000); // Every 15 seconds
 }
 
 function stopHeartbeat() {
     if (heartbeatInterval) {
         clearInterval(heartbeatInterval);
+        heartbeatInterval = null;
     }
 }
 
-// Handle page visibility change
-document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) {
-        const sessionId = getSessionId();
-        fetch(`${API_BASE_URL}/heartbeat?sessionId=${sessionId}`);
-    }
-});
-
-// Handle page unload
-window.addEventListener('pagehide', () => {
+// Multiple ways to detect page/tab closing
+window.addEventListener('beforeunload', () => {
+    isLeaving = true;
     trackLeave();
     stopHeartbeat();
+});
+
+window.addEventListener('pagehide', () => {
+    isLeaving = true;
+    trackLeave();
+    stopHeartbeat();
+});
+
+// Also try to send leave when page is unloaded
+window.addEventListener('unload', () => {
+    isLeaving = true;
+    trackLeave();
+    stopHeartbeat();
+});
+
+// Handle page visibility change (tab switch)
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        // Tab hidden - reduce heartbeat frequency or keep as is
+        console.log('Tab hidden');
+    } else {
+        // Tab visible again - send immediate heartbeat
+        const sessionId = getSessionId();
+        fetch(`${API_BASE_URL}/heartbeat?sessionId=${sessionId}`);
+        console.log('Tab visible, heartbeat sent');
+    }
 });
 
 // Initialize tracking
