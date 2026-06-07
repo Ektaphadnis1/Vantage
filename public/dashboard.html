@@ -51,16 +51,34 @@
             min-width: 250px;
         }
 
-        table {
+        .stat-table {
             width: 100%;
             border-collapse: collapse;
         }
 
-        th,
-        td {
-            padding: 8px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
+        .stat-table tr {
+            border-bottom: 1px solid #eee;
+        }
+
+        .stat-table td {
+            padding: 10px 5px;
+        }
+
+        .stat-table td:first-child {
+            font-weight: normal;
+            color: #333;
+        }
+
+        .stat-table td:last-child {
+            text-align: right;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #999;
+            padding: 20px;
         }
 
         #map {
@@ -74,6 +92,11 @@
             color: #666;
             margin-top: 8px;
             text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
         }
     </style>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -92,20 +115,20 @@
         <div class="card">
             <div class="card-title">Real-Time Visitor Locations Map</div>
             <div id="map"></div>
-            <div class="map-note">📍 Each marker shows a visitor's approximate location</div>
+            <div class="map-note">Each marker shows a visitor's approximate location</div>
         </div>
 
         <div class="row">
             <div class="col">
                 <div class="card">
                     <div class="card-title">Traffic Sources</div>
-                    <div id="sourcesList">Loading...</div>
+                    <div id="sourcesList"></div>
                 </div>
             </div>
             <div class="col">
                 <div class="card">
                     <div class="card-title">Top Locations</div>
-                    <div id="locationsList">Loading...</div>
+                    <div id="locationsList"></div>
                 </div>
             </div>
         </div>
@@ -114,13 +137,13 @@
             <div class="col">
                 <div class="card">
                     <div class="card-title">Devices</div>
-                    <div id="devicesList">Loading...</div>
+                    <div id="devicesList"></div>
                 </div>
             </div>
             <div class="col">
                 <div class="card">
                     <div class="card-title">Browsers</div>
-                    <div id="browsersList">Loading...</div>
+                    <div id="browsersList"></div>
                 </div>
             </div>
         </div>
@@ -132,7 +155,7 @@
         let markers = {};
 
         function initMap() {
-            map = L.map('map').setView([20, 0], 2);
+            map = L.map('map').setView([20.5937, 78.9629], 5);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
@@ -140,13 +163,13 @@
 
         function getCoordinatesFromLocation(location) {
             const locationMap = {
+                'Pune': [18.5204, 73.8567],
                 'Mumbai': [19.0760, 72.8777],
                 'Delhi': [28.6139, 77.2090],
                 'Bangalore': [12.9716, 77.5946],
                 'Chennai': [13.0827, 80.2707],
                 'Kolkata': [22.5726, 88.3639],
-                'Hyderabad': [17.3850, 78.4867],
-                'Pune': [18.5204, 73.8567]
+                'Hyderabad': [17.3850, 78.4867]
             };
 
             for (const [city, coords] of Object.entries(locationMap)) {
@@ -174,9 +197,24 @@
             for (const [location, count] of Object.entries(locationCounts)) {
                 const coords = getCoordinatesFromLocation(location);
                 const marker = L.marker(coords).addTo(map);
-                marker.bindPopup(`<b>${location}</b><br>${count} visitors`);
+                marker.bindPopup('<b>' + location + '</b><br>' + count + ' visitors');
                 markers[location] = marker;
             }
+        }
+
+        function createTable(data) {
+            if (Object.keys(data).length === 0) {
+                return '<div class="no-data">No visitors yet</div>';
+            }
+            let html = '<table class="stat-table">';
+            for (const [key, value] of Object.entries(data)) {
+                html += '<tr>';
+                html += '<td>' + key + '</td>';
+                html += '<td>' + value + ' visitor' + (value > 1 ? 's' : '') + '</td>';
+                html += '</tr>';
+            }
+            html += '</table>';
+            return html;
         }
 
         socket.on('visitor-count', (count) => {
@@ -188,39 +226,40 @@
 
             // Traffic Sources
             const sources = {};
-            Object.values(sessions).forEach(s => { sources[s.source] = (sources[s.source] || 0) + 1; });
-            let html = '的人';
-            for (const [k, v] of Object.entries(sources)) html += `<tr><td>${k}</td><td>${v} visitors</td></tr>`;
-            html += '</table>';
-            document.getElementById('sourcesList').innerHTML = html || 'No data';
+            Object.values(sessions).forEach(s => {
+                sources[s.source] = (sources[s.source] || 0) + 1;
+            });
+            document.getElementById('sourcesList').innerHTML = createTable(sources);
 
             // Locations
-            const locs = {};
-            Object.values(sessions).forEach(s => { locs[s.location] = (locs[s.location] || 0) + 1; });
-            html = '的人';
-            for (const [k, v] of Object.entries(locs)) html += `<tr><td>${k}</td><td>${v} visitors</td></tr>`;
-            html += '</table>';
-            document.getElementById('locationsList').innerHTML = html || 'No data';
+            const locations = {};
+            Object.values(sessions).forEach(s => {
+                if (s.location && s.location !== 'Unknown') {
+                    locations[s.location] = (locations[s.location] || 0) + 1;
+                }
+            });
+            document.getElementById('locationsList').innerHTML = createTable(locations);
 
             // Devices
             const devices = {};
-            Object.values(sessions).forEach(s => { devices[s.device] = (devices[s.device] || 0) + 1; });
-            html = '的人';
-            for (const [k, v] of Object.entries(devices)) html += `<tr><td>${k}</td><td>${v} visitors</td></tr>`;
-            html += '</table>';
-            document.getElementById('devicesList').innerHTML = html || 'No data';
+            Object.values(sessions).forEach(s => {
+                devices[s.device] = (devices[s.device] || 0) + 1;
+            });
+            document.getElementById('devicesList').innerHTML = createTable(devices);
 
             // Browsers
             const browsers = {};
-            Object.values(sessions).forEach(s => { browsers[s.browser] = (browsers[s.browser] || 0) + 1; });
-            html = '的人';
-            for (const [k, v] of Object.entries(browsers)) html += `<table><td>${k}</td><td>${v} visitors</td></tr>`;
-            html += '</table>';
-            document.getElementById('browsersList').innerHTML = html || 'No data';
+            Object.values(sessions).forEach(s => {
+                browsers[s.browser] = (browsers[s.browser] || 0) + 1;
+            });
+            document.getElementById('browsersList').innerHTML = createTable(browsers);
+        });
+
+        socket.on('connect', () => {
+            socket.emit('request-initial');
         });
 
         initMap();
-        socket.emit('request-initial');
     </script>
 </body>
 
