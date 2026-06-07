@@ -11,18 +11,21 @@ function getSessionId() {
 // Get traffic source from referrer
 function getTrafficSource() {
     const referrer = document.referrer;
-    if (!referrer) return 'direct';
-    if (referrer.includes('google')) return 'organic';
-    if (referrer.includes('facebook') || referrer.includes('linkedin') || referrer.includes('twitter') || referrer.includes('instagram')) return 'social';
-    return 'referral';
+    if (!referrer || referrer === '') return 'Direct';
+    if (referrer.includes('google')) return 'Google';
+    if (referrer.includes('facebook')) return 'Facebook';
+    if (referrer.includes('linkedin')) return 'LinkedIn';
+    if (referrer.includes('twitter')) return 'Twitter';
+    if (referrer.includes('instagram')) return 'Instagram';
+    return 'Referral';
 }
 
 // Get device type
 function getDeviceType() {
     const ua = navigator.userAgent;
-    if (/(tablet|ipad|playbook|silk)|(android(?!.*mobile))/i.test(ua)) return 'tablet';
-    if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) return 'mobile';
-    return 'desktop';
+    if (/(tablet|ipad|playbook|silk)|(android(?!.*mobile))/i.test(ua)) return 'Tablet';
+    if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) return 'Mobile';
+    return 'Desktop';
 }
 
 // Get browser name
@@ -36,15 +39,47 @@ function getBrowserName() {
     return 'Other';
 }
 
-// Get location from IP
+// Get location from IP with fallback
 async function getLocation() {
-    try {
-        const response = await fetch('https://ipapi.co/json/');
-        const data = await response.json();
-        return `${data.city}, ${data.country_name}`;
-    } catch (error) {
-        return 'Unknown';
+    // Try multiple APIs for better accuracy
+    const apis = [
+        'https://ipapi.co/json/',
+        'https://ipwho.is/',
+        'https://freeipapi.com/api/json/'
+    ];
+    
+    for (const api of apis) {
+        try {
+            const response = await fetch(api);
+            const data = await response.json();
+            
+            let city = data.city || 'Unknown';
+            let region = data.region || data.state || '';
+            let country = data.country_name || data.country || 'India';
+            
+            // Clean up city names
+            if (city === 'Unknown' && region && region !== 'Unknown') {
+                city = region;
+            }
+            
+            if (city !== 'Unknown') {
+                return `${city}, ${country}`;
+            }
+        } catch (error) {
+            console.log(`Location API failed: ${api}`);
+        }
     }
+    
+    // Fallback: Try to get from browser's timezone
+    try {
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (timezone) {
+            const city = timezone.split('/').pop().replace('_', ' ');
+            return `${city}, India (approx)`;
+        }
+    } catch (e) {}
+    
+    return 'Pune, India'; // Default fallback for testing
 }
 
 // LIVE SERVER URL
@@ -58,7 +93,9 @@ async function trackVisit() {
     const browser = getBrowserName();
     const location = await getLocation();
     
-    await fetch(`${API_BASE_URL}/track?sessionId=${sessionId}&source=${source}&location=${location}&device=${device}&browser=${browser}`);
+    console.log(`Tracking: ${sessionId} - ${location} - ${device} - ${source}`);
+    
+    await fetch(`${API_BASE_URL}/track?sessionId=${sessionId}&source=${source}&location=${encodeURIComponent(location)}&device=${device}&browser=${browser}`);
 }
 
 // Track when visitor leaves
@@ -82,28 +119,16 @@ function stopHeartbeat() {
     }
 }
 
-// Detect page refresh vs close
-let isRefreshing = false;
-
-window.addEventListener('beforeunload', () => {
-    isRefreshing = true;
-    trackLeave();
-    stopHeartbeat();
-});
-
-// Handle page visibility change (tab switch vs close)
+// Handle page visibility change
 document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-        // Tab hidden - don't leave yet, just reduce heartbeat
-        console.log('Tab hidden');
-    } else {
+    if (!document.hidden) {
         // Tab visible again - send heartbeat to confirm still active
         const sessionId = getSessionId();
         fetch(`${API_BASE_URL}/heartbeat?sessionId=${sessionId}`);
     }
 });
 
-// Handle page unload (refresh or close)
+// Handle page unload
 window.addEventListener('pagehide', () => {
     trackLeave();
     stopHeartbeat();

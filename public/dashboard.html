@@ -158,102 +158,170 @@
     <script>
         const socket = io();
         let map;
-        let markers = {}; // Store markers by sessionId
+        let markers = {};
 
-        // Initialize map (centered on world view)
+        // Initialize map
         function initMap() {
-            map = L.map('map').setView([20, 0], 2);
+            map = L.map('map').setView([20.59, 78.96], 5);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
         }
 
-        // Get coordinates from location string (simplified mapping)
+        // Get coordinates from location string
         function getCoordinatesFromLocation(location) {
-            // Default to India center if location unknown
             const locationMap = {
+                'Pune': [18.5204, 73.8567],
                 'Mumbai': [19.0760, 72.8777],
                 'Delhi': [28.6139, 77.2090],
                 'Bangalore': [12.9716, 77.5946],
                 'Chennai': [13.0827, 80.2707],
                 'Kolkata': [22.5726, 88.3639],
                 'Hyderabad': [17.3850, 78.4867],
-                'Pune': [18.5204, 73.8567],
                 'Ahmedabad': [23.0225, 72.5714],
                 'Jaipur': [26.9124, 75.7873],
-                'Lucknow': [26.8467, 80.9462]
+                'Lucknow': [26.8467, 80.9462],
+                'Indore': [22.7196, 75.8577],
+                'Surat': [21.1702, 72.8311],
+                'Vadodara': [22.3072, 73.1812],
+                'Nagpur': [21.1458, 79.0882],
+                'Nashik': [19.9975, 73.7898],
+                'Rajkot': [22.3039, 70.8022],
+                'Bhopal': [23.2599, 77.4126],
+                'Chandigarh': [30.7333, 76.7794]
             };
 
-            // Check if location contains any of the known cities
             for (const [city, coords] of Object.entries(locationMap)) {
                 if (location.includes(city)) {
                     return coords;
                 }
             }
 
-            // Check for countries
             if (location.includes('United States')) return [37.0902, -95.7129];
             if (location.includes('United Kingdom')) return [55.3781, -3.4360];
             if (location.includes('Canada')) return [56.1304, -106.3468];
-            if (location.includes('Australia')) return [-25.2744, 133.7751];
-            if (location.includes('Germany')) return [51.1657, 10.4515];
-            if (location.includes('France')) return [46.2276, 2.2137];
-            if (location.includes('Japan')) return [36.2048, 138.2529];
-            if (location.includes('China')) return [35.8617, 104.1954];
-            if (location.includes('Singapore')) return [1.3521, 103.8198];
-            if (location.includes('UAE') || location.includes('Dubai')) return [23.4241, 53.8478];
 
-            // Default: center of India
             return [20.5937, 78.9629];
         }
 
         // Update map with current visitors
         function updateMap(sessions) {
-            // Remove all existing markers
             for (let id in markers) {
                 map.removeLayer(markers[id]);
             }
             markers = {};
 
-            // Add markers for each active session
             let locationCounts = {};
 
-            Object.entries(sessions).forEach(([sessionId, session]) => {
+            Object.values(sessions).forEach(session => {
                 const location = session.location;
-                if (location && location !== 'Unknown') {
+                if (location && location !== 'Unknown' && !location.includes('approx')) {
                     locationCounts[location] = (locationCounts[location] || 0) + 1;
                 }
             });
 
-            // Add a marker for each unique location
+            if (Object.keys(locationCounts).length === 0) {
+                return;
+            }
+
             for (const [location, count] of Object.entries(locationCounts)) {
                 const coords = getCoordinatesFromLocation(location);
                 const marker = L.marker(coords).addTo(map);
-
-                // Add popup with visitor info
                 marker.bindPopup(`
-                    <b>📍 ${location}</b><br>
-                    👥 ${count} active visitor${count > 1 ? 's' : ''}
-                `);
-
+                <b>📍 ${location}</b><br>
+                👥 ${count} active visitor${count > 1 ? 's' : ''}
+            `);
                 markers[location] = marker;
-            }
-
-            // If no markers, show a default message
-            if (Object.keys(markers).length === 0) {
-                // Add a subtle hint marker
-                const hintMarker = L.marker([20.5937, 78.9629]).addTo(map);
-                hintMarker.bindPopup('👋 Visitors will appear here once they arrive!');
-                markers['hint'] = hintMarker;
             }
         }
 
-        // Listen for visitor count updates
+        // Update traffic sources table
+        function updateTrafficSources(sessions) {
+            const sources = {};
+            Object.values(sessions).forEach(session => {
+                const source = session.source;
+                sources[source] = (sources[source] || 0) + 1;
+            });
+
+            let html = '<table style="width:100%">';
+            if (Object.keys(sources).length === 0) {
+                html += '<tr><td style="text-align:center; color:#888;">No visitors yet</td></tr>';
+            } else {
+                for (const [source, count] of Object.entries(sources)) {
+                    html += `<tr><td><strong>${source}</strong></td><td style="text-align:right">${count} visitor${count > 1 ? 's' : ''}</td></tr>`;
+                }
+            }
+            html += '</table>';
+            document.getElementById('sourcesList').innerHTML = html;
+        }
+
+        // Update locations table
+        function updateLocations(sessions) {
+            const locations = {};
+            Object.values(sessions).forEach(session => {
+                const location = session.location;
+                locations[location] = (locations[location] || 0) + 1;
+            });
+
+            const sorted = Object.entries(locations).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+            let html = '<table style="width:100%">';
+            if (sorted.length === 0) {
+                html += '<tr><td style="text-align:center; color:#888;">No visitors yet</td></tr>';
+            } else {
+                for (const [location, count] of sorted) {
+                    html += `<tr><td><strong>${location}</strong></td><td style="text-align:right">${count} visitor${count > 1 ? 's' : ''}</td></tr>`;
+                }
+            }
+            html += '</table>';
+            document.getElementById('locationsList').innerHTML = html;
+        }
+
+        // Update devices table
+        function updateDevices(sessions) {
+            const devices = {};
+            Object.values(sessions).forEach(session => {
+                const device = session.device;
+                devices[device] = (devices[device] || 0) + 1;
+            });
+
+            let html = '<table style="width:100%">';
+            if (Object.keys(devices).length === 0) {
+                html += '<tr><td style="text-align:center; color:#888;">No visitors yet</td></tr>';
+            } else {
+                for (const [device, count] of Object.entries(devices)) {
+                    html += `<tr><td><strong>${device}</strong></td><td style="text-align:right">${count} visitor${count > 1 ? 's' : ''}</td></tr>`;
+                }
+            }
+            html += '</table>';
+            document.getElementById('devicesList').innerHTML = html;
+        }
+
+        // Update browsers table
+        function updateBrowsers(sessions) {
+            const browsers = {};
+            Object.values(sessions).forEach(session => {
+                const browser = session.browser;
+                browsers[browser] = (browsers[browser] || 0) + 1;
+            });
+
+            let html = '<table style="width:100%">';
+            if (Object.keys(browsers).length === 0) {
+                html += '<tr><td style="text-align:center; color:#888;">No visitors yet</td></tr>';
+            } else {
+                for (const [browser, count] of Object.entries(browsers)) {
+                    html += `<tr><td><strong>${browser}</strong></td><td style="text-align:right">${count} visitor${count > 1 ? 's' : ''}</td></tr>`;
+                }
+            }
+            html += '</table>';
+            document.getElementById('browsersList').innerHTML = html;
+        }
+
+        // Socket event listeners
         socket.on('visitor-count', (count) => {
             document.getElementById('activeCount').innerText = count;
         });
 
-        // Listen for session details updates
         socket.on('session-details', (sessions) => {
             updateTrafficSources(sessions);
             updateLocations(sessions);
@@ -262,148 +330,23 @@
             updateMap(sessions);
         });
 
-        // Handle socket disconnection
+        // Reconnection handling
         socket.on('disconnect', () => {
-            console.log('⚠️ Disconnected from server. Attempting to reconnect...');
-            // Optional: Show a warning to the user
-            const activeCountElement = document.getElementById('activeCount');
-            if (activeCountElement) {
-                activeCountElement.style.color = '#ff4444';
-            }
+            console.log('Disconnected from server');
+            const countElement = document.getElementById('activeCount');
+            if (countElement) countElement.style.color = '#ff4444';
         });
 
-        // Handle socket reconnection
         socket.on('connect', () => {
-            console.log('✅ Reconnected to server successfully!');
-            // Reset the color
-            const activeCountElement = document.getElementById('activeCount');
-            if (activeCountElement) {
-                activeCountElement.style.color = '#007bff';
-            }
-            // Request fresh data on reconnect
+            console.log('Reconnected to server');
+            const countElement = document.getElementById('activeCount');
+            if (countElement) countElement.style.color = '#007bff';
             socket.emit('request-initial');
         });
 
-        // Handle reconnection attempts
-        socket.io.on('reconnect_attempt', (attemptNumber) => {
-            console.log(`🔄 Reconnection attempt ${attemptNumber}`);
-        });
-
-        socket.io.on('reconnect', () => {
-            console.log('🎉 Successfully reconnected!');
-        });
-
-        socket.io.on('reconnect_error', (error) => {
-            console.error('❌ Reconnection error:', error);
-        });
-
-        function updateTrafficSources(sessions) {
-            const sources = {};
-            Object.values(sessions).forEach(session => {
-                const source = session.source;
-                sources[source] = (sources[source] || 0) + 1;
-            });
-
-            let html = '的人';
-            if (Object.keys(sources).length === 0) {
-                html += '<tr><td>No visitors yet</td>td';
-            } else {
-                for (const [source, count] of Object.entries(sources)) {
-                    html += `<tr><td>${source}</td><td>${count} visitors</td></tr>`;
-                }
-            }
-            html += '</table>';
-            document.getElementById('sourcesList').innerHTML = html;
-        }
-
-        function updateLocations(sessions) {
-            const locations = {};
-            Object.values(sessions).forEach(session => {
-                const location = session.location;
-                locations[location] = (locations[location] || 0) + 1;
-            });
-
-            // Sort by count and get top 5
-            const sorted = Object.entries(locations).sort((a, b) => b[1] - a[1]).slice(0, 5);
-
-            let html = '<table>';
-            if (sorted.length === 0) {
-                html += '<tr><td>No visitors yet</td></tr>';
-            } else {
-                for (const [location, count] of sorted) {
-                    html += `<tr><td>${location}</td><td>${count} visitors</td></tr>`;
-                }
-            }
-            html += '</table>';
-            document.getElementById('locationsList').innerHTML = html;
-        }
-
-        function updateDevices(sessions) {
-            const devices = {};
-            Object.values(sessions).forEach(session => {
-                const device = session.device;
-                devices[device] = (devices[device] || 0) + 1;
-            });
-
-            let html = '<table>';
-            if (Object.keys(devices).length === 0) {
-                html += '<tr><td>No visitors yet</td></tr>';
-            } else {
-                for (const [device, count] of Object.entries(devices)) {
-                    html += `<tr><td>${device}</td><td>${count} visitors</td></tr>`;
-                }
-            }
-            html += '</table>';
-            document.getElementById('devicesList').innerHTML = html;
-        }
-
-        function updateBrowsers(sessions) {
-            const browsers = {};
-            Object.values(sessions).forEach(session => {
-                const browser = session.browser;
-                browsers[browser] = (browsers[browser] || 0) + 1;
-            });
-
-            let html = '<table>';
-            if (Object.keys(browsers).length === 0) {
-                html += '<tr><td>No visitors yet</td></tr>';
-            } else {
-                for (const [browser, count] of Object.entries(browsers)) {
-                    html += `<tr><td>${browser}</td><td>${count} visitors</td></tr>`;
-                }
-            }
-            html += '</table>';
-            document.getElementById('browsersList').innerHTML = html;
-        }
-
-        // Initialize map when page loads
+        // Initialize
         initMap();
-
-        // Request initial data
         socket.emit('request-initial');
-
-        // Optional: Add manual refresh button functionality
-        function manualRefresh() {
-            console.log('Manual refresh requested');
-            socket.emit('request-initial');
-        }
-
-        // Optional: Display connection status
-        function updateConnectionStatus(status) {
-            const statusElement = document.getElementById('connectionStatus');
-            if (statusElement) {
-                statusElement.innerText = status;
-                statusElement.style.color = status === 'Connected' ? '#00aa00' : '#ff4444';
-            }
-        }
-
-        socket.on('connect', () => {
-            updateConnectionStatus('Connected');
-        });
-
-        socket.on('disconnect', () => {
-            updateConnectionStatus('Disconnected');
-        });
     </script>
 </body>
 
