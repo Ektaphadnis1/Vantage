@@ -39,9 +39,18 @@ function getBrowserName() {
     return 'Other';
 }
 
-// Get location from IP with fallback
+// FOR TESTING: Manually set your location
+// Change this to your actual city for testing
+const MANUAL_LOCATION = "Pune, Maharashtra, India";
+
+// Get location from IP with better accuracy
 async function getLocation() {
-    // Try multiple APIs for better accuracy
+    // MANUAL OVERRIDE FOR TESTING
+    // Remove this line when deploying to production
+    return MANUAL_LOCATION;
+    
+    /* 
+    // UNCOMMENT THIS FOR PRODUCTION WITH REAL IP DETECTION
     const apis = [
         'https://ipapi.co/json/',
         'https://ipwho.is/',
@@ -53,33 +62,22 @@ async function getLocation() {
             const response = await fetch(api);
             const data = await response.json();
             
-            let city = data.city || 'Unknown';
+            let city = data.city || '';
             let region = data.region || data.state || '';
-            let country = data.country_name || data.country || 'India';
+            let country = data.country_name || data.country || '';
             
-            // Clean up city names
-            if (city === 'Unknown' && region && region !== 'Unknown') {
-                city = region;
-            }
-            
-            if (city !== 'Unknown') {
-                return `${city}, ${country}`;
+            if (city && city !== 'Unknown' && city !== '') {
+                // Clean up city names
+                city = city.replace(' district', '').trim();
+                return `${city}, ${region}, ${country}`;
             }
         } catch (error) {
             console.log(`Location API failed: ${api}`);
         }
     }
     
-    // Fallback: Try to get from browser's timezone
-    try {
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        if (timezone) {
-            const city = timezone.split('/').pop().replace('_', ' ');
-            return `${city}, India (approx)`;
-        }
-    } catch (e) {}
-    
-    return 'Pune, India'; // Default fallback for testing
+    return "Location detection failed";
+    */
 }
 
 // LIVE SERVER URL
@@ -122,7 +120,6 @@ function stopHeartbeat() {
 // Handle page visibility change
 document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
-        // Tab visible again - send heartbeat to confirm still active
         const sessionId = getSessionId();
         fetch(`${API_BASE_URL}/heartbeat?sessionId=${sessionId}`);
     }
