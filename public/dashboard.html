@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,9 +7,7 @@
     <script src="/socket.io/socket.io.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -20,306 +17,352 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            background: radial-gradient(circle at 20% 50%, #0a0a0a, #030014);
             min-height: 100vh;
-            padding: 20px;
+            padding: 30px 20px;
+            position: relative;
+        }
+
+        /* Animated background glow */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 80% 30%, rgba(102, 126, 234, 0.15), transparent 60%);
+            pointer-events: none;
+            z-index: 0;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1300px;
             margin: 0 auto;
+            position: relative;
+            z-index: 1;
         }
 
         /* Header */
         .header {
-            margin-bottom: 30px;
             text-align: center;
+            margin-bottom: 40px;
         }
 
         .header h1 {
-            font-size: 2.5rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #06b6d4 100%);
+            background-size: 200% 200%;
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            letter-spacing: -0.5px;
+            animation: gradientShift 3s ease infinite;
+            letter-spacing: -1px;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .header p {
-            color: #a0a0c0;
+            color: #6b7280;
             margin-top: 8px;
+            font-size: 0.9rem;
         }
 
         .live-badge {
-            display: inline-block;
-            background: rgba(255, 71, 71, 0.2);
-            border: 1px solid #ff4747;
-            color: #ff6b6b;
-            padding: 4px 12px;
-            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #f87171;
+            padding: 4px 14px;
+            border-radius: 40px;
             font-size: 12px;
-            margin-top: 10px;
-            animation: pulse 2s infinite;
+            font-weight: 500;
+            margin-top: 12px;
+            backdrop-filter: blur(4px);
+        }
+
+        .live-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
         }
 
         @keyframes pulse {
-            0% {
-                opacity: 0.6;
-            }
-
-            50% {
-                opacity: 1;
-            }
-
-            100% {
-                opacity: 0.6;
-            }
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
         }
 
-        /* Stats Row */
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 20px;
+        /* Active Sessions Hero Card */
+        .hero-card {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.1));
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 40px;
+            padding: 45px 30px;
+            text-align: center;
+            margin-bottom: 35px;
+            box-shadow: 0 20px 40px -20px rgba(139, 92, 246, 0.3);
             transition: all 0.3s;
         }
 
-        .stat-card:hover {
-            transform: translateY(-5px);
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(102, 126, 234, 0.5);
+        .hero-card:hover {
+            border-color: rgba(139, 92, 246, 0.6);
+            box-shadow: 0 25px 50px -20px rgba(139, 92, 246, 0.5);
         }
 
-        .stat-icon {
-            font-size: 32px;
-            margin-bottom: 12px;
-        }
-
-        .stat-value {
-            font-size: 36px;
-            font-weight: 700;
-            color: #fff;
-        }
-
-        .stat-label {
-            color: #a0a0c0;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-
-        /* Active Sessions Special Card */
-        .active-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            text-align: center;
-            padding: 40px;
-            border-radius: 30px;
-            margin-bottom: 30px;
-        }
-
-        .active-card .stat-label {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 18px;
+        .hero-label {
+            color: #a78bfa;
+            font-size: 0.85rem;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
+            font-weight: 600;
+            margin-bottom: 15px;
         }
 
-        .active-card .stat-value {
-            font-size: 80px;
+        .hero-number {
+            font-size: 96px;
             font-weight: 800;
+            background: linear-gradient(135deg, #fff, #c4b5fd);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+
+        .hero-sub {
+            color: #5b6e8c;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
         }
 
         /* Map Card */
         .map-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
+            background: rgba(15, 15, 25, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 28px;
             padding: 20px;
-            margin-bottom: 30px;
-        }
-
-        .map-card h3 {
-            color: #fff;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-
-        #map {
-            height: 350px;
-            width: 100%;
-            border-radius: 15px;
-            background: #1a1a2e;
-        }
-
-        .map-note {
-            color: #a0a0c0;
-            font-size: 12px;
-            margin-top: 10px;
-            text-align: center;
-        }
-
-        /* Tables Grid */
-        .tables-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-        }
-
-        .table-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 20px;
+            margin-bottom: 35px;
             transition: all 0.3s;
         }
 
-        .table-card:hover {
-            border-color: rgba(102, 126, 234, 0.5);
+        .map-card:hover {
+            border-color: rgba(139, 92, 246, 0.4);
+            box-shadow: 0 10px 30px -15px rgba(139, 92, 246, 0.2);
         }
 
-        .table-card h3 {
-            color: #fff;
-            font-size: 16px;
-            margin-bottom: 15px;
+        .map-header {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            margin-bottom: 18px;
+            padding-left: 8px;
         }
 
-        .stat-table {
+        .map-header h3 {
+            color: #e0e0e0;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .map-header span {
+            font-size: 1.3rem;
+        }
+
+        #map {
+            height: 360px;
+            width: 100%;
+            border-radius: 20px;
+            background: #0a0a10;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .map-note {
+            color: #4a5568;
+            font-size: 11px;
+            margin-top: 12px;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        /* 4 Box Grid */
+        .insight-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 22px;
+        }
+
+        .insight-card {
+            background: rgba(12, 12, 20, 0.8);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 24px;
+            padding: 22px 18px;
+            transition: all 0.35s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .insight-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #8b5cf6, #3b82f6, #06b6d4);
+            transform: translateX(-100%);
+            transition: transform 0.5s;
+        }
+
+        .insight-card:hover::before {
+            transform: translateX(0);
+        }
+
+        .insight-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(139, 92, 246, 0.3);
+            background: rgba(18, 18, 30, 0.9);
+        }
+
+        .card-icon {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            color: #9ca3af;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+            margin-bottom: 18px;
+        }
+
+        /* Tables inside cards */
+        .insight-table {
             width: 100%;
             border-collapse: collapse;
         }
 
-        .stat-table tr {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        .insight-table tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .stat-table td {
-            padding: 10px 5px;
-            color: #e0e0e0;
+        .insight-table td {
+            padding: 10px 0;
+            font-size: 0.9rem;
         }
 
-        .stat-table td:first-child {
+        .insight-table td:first-child {
+            color: #cbd5e1;
             font-weight: 400;
         }
 
-        .stat-table td:last-child {
+        .insight-table td:last-child {
             text-align: right;
             font-weight: 600;
-            color: #667eea;
+            background: linear-gradient(135deg, #a855f7, #3b82f6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
 
         .no-data {
             text-align: center;
-            color: #a0a0c0;
-            padding: 20px;
+            color: #4a5568;
+            padding: 20px 0;
+            font-size: 0.85rem;
         }
 
+        /* Responsive */
         @media (max-width: 1024px) {
-
-            .stats-row,
-            .tables-grid {
+            .insight-grid {
                 grid-template-columns: repeat(2, 1fr);
+            }
+            .hero-number {
+                font-size: 64px;
             }
         }
 
         @media (max-width: 640px) {
-
-            .stats-row,
-            .tables-grid {
+            .insight-grid {
                 grid-template-columns: 1fr;
             }
-
-            .active-card .stat-value {
+            .hero-number {
                 font-size: 48px;
+            }
+            .header h1 {
+                font-size: 2rem;
             }
         }
     </style>
 </head>
-
 <body>
     <div class="container">
         <!-- Header -->
         <div class="header">
             <h1>Vantage Analytics</h1>
             <p>Real-Time Visitor Intelligence</p>
-            <div class="live-badge">🔴 LIVE MONITORING ACTIVE</div>
+            <div class="live-badge">LIVE MONITORING</div>
         </div>
 
-        <!-- Active Sessions (Featured Card) -->
-        <div class="active-card">
-            <div class="stat-label">ACTIVE SESSIONS RIGHT NOW</div>
-            <div class="stat-value" id="activeCount">0</div>
-            <div class="stat-label">real-time visitors</div>
+        <!-- Active Sessions Hero -->
+        <div class="hero-card">
+            <div class="hero-label">ACTIVE SESSIONS</div>
+            <div class="hero-number" id="activeCount">0</div>
+            <div class="hero-sub">real-time visitors right now</div>
         </div>
 
-        <!-- Map Card -->
+        <!-- Map Section -->
         <div class="map-card">
-            <h3>🌍 Live Visitor Locations</h3>
+            <div class="map-header">
+                <span>📍</span>
+                <h3>Live Visitor Locations</h3>
+            </div>
             <div id="map"></div>
-            <div class="map-note">📍 Geographic distribution of active visitors</div>
+            <div class="map-note">Geographic distribution of active visitors · Markers update in real-time</div>
         </div>
 
-        <!-- Stats Row (4 Key Metrics) -->
-        <div class="stats-row">
-            <div class="stat-card">
-                <div class="stat-icon">🌐</div>
-                <div class="stat-value" id="totalVisitors">0</div>
-                <div class="stat-label">Total Visitors Today</div>
+        <!-- 4 Insight Boxes -->
+        <div class="insight-grid">
+            <!-- Traffic Sources -->
+            <div class="insight-card">
+                <div class="card-icon">🔗</div>
+                <div class="card-title">TRAFFIC SOURCES</div>
+                <div id="sourcesList"><div class="no-data">No data yet</div></div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon">⏱️</div>
-                <div class="stat-value" id="avgSession">--</div>
-                <div class="stat-label">Avg Session Duration</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">📄</div>
-                <div class="stat-value" id="pagesPerSession">--</div>
-                <div class="stat-label">Pages Per Session</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">🎯</div>
-                <div class="stat-value" id="bounceRate">--</div>
-                <div class="stat-label">Bounce Rate</div>
-            </div>
-        </div>
 
-        <!-- Analytics Tables -->
-        <div class="tables-grid">
-            <div class="table-card">
-                <h3>🔗 Traffic Sources</h3>
-                <div id="sourcesList">
-                    <div class="no-data">No data yet</div>
-                </div>
+            <!-- Top Locations -->
+            <div class="insight-card">
+                <div class="card-icon">📍</div>
+                <div class="card-title">TOP LOCATIONS</div>
+                <div id="locationsList"><div class="no-data">No data yet</div></div>
             </div>
-            <div class="table-card">
-                <h3>📍 Top Locations</h3>
-                <div id="locationsList">
-                    <div class="no-data">No data yet</div>
-                </div>
+
+            <!-- Devices -->
+            <div class="insight-card">
+                <div class="card-icon">📱</div>
+                <div class="card-title">DEVICES</div>
+                <div id="devicesList"><div class="no-data">No data yet</div></div>
             </div>
-            <div class="table-card">
-                <h3>📱 Devices</h3>
-                <div id="devicesList">
-                    <div class="no-data">No data yet</div>
-                </div>
-            </div>
-            <div class="table-card">
-                <h3>🌐 Browsers</h3>
-                <div id="browsersList">
-                    <div class="no-data">No data yet</div>
-                </div>
+
+            <!-- Browsers -->
+            <div class="insight-card">
+                <div class="card-icon">🌐</div>
+                <div class="card-title">BROWSERS</div>
+                <div id="browsersList"><div class="no-data">No data yet</div></div>
             </div>
         </div>
     </div>
@@ -328,7 +371,6 @@
         const socket = io();
         let map;
         let markers = {};
-        let totalVisitorsCount = 0;
 
         function initMap() {
             map = L.map('map').setView([20.5937, 78.9629], 5);
@@ -350,7 +392,7 @@
                 'Ahmedabad': [23.0225, 72.5714],
                 'Jaipur': [26.9124, 75.7873]
             };
-
+            
             for (const [city, coords] of Object.entries(locationMap)) {
                 if (location.toLowerCase().includes(city.toLowerCase())) {
                     return coords;
@@ -364,15 +406,15 @@
                 map.removeLayer(markers[id]);
             }
             markers = {};
-
+            
             let locationCounts = {};
             Object.values(sessions).forEach(session => {
                 const location = session.location;
-                if (location && location !== 'Unknown') {
+                if (location && location !== 'Unknown' && !location.includes('failed')) {
                     locationCounts[location] = (locationCounts[location] || 0) + 1;
                 }
             });
-
+            
             for (const [location, count] of Object.entries(locationCounts)) {
                 const coords = getCoordinatesFromLocation(location);
                 const marker = L.marker(coords).addTo(map);
@@ -385,10 +427,10 @@
         }
 
         function createTable(data) {
-            if (Object.keys(data).length === 0) {
+            if (!data || Object.keys(data).length === 0) {
                 return '<div class="no-data">No data yet</div>';
             }
-            let html = '<table class="stat-table">';
+            let html = '<table class="insight-table">';
             for (const [key, value] of Object.entries(data)) {
                 html += '<tr>';
                 html += '<td>' + key + '</td>';
@@ -404,40 +446,25 @@
         });
 
         socket.on('session-details', (sessions) => {
-            // Update total visitors count
-            const sessionCount = Object.keys(sessions).length;
-            document.getElementById('totalVisitors').innerText = sessionCount;
-
             updateMap(sessions);
-
-            // Traffic Sources
+            
             const sources = {};
+            const locations = {};
+            const devices = {};
+            const browsers = {};
+            
             Object.values(sessions).forEach(s => {
                 sources[s.source] = (sources[s.source] || 0) + 1;
-            });
-            document.getElementById('sourcesList').innerHTML = createTable(sources);
-
-            // Locations
-            const locations = {};
-            Object.values(sessions).forEach(s => {
                 if (s.location && s.location !== 'Unknown') {
                     locations[s.location] = (locations[s.location] || 0) + 1;
                 }
-            });
-            document.getElementById('locationsList').innerHTML = createTable(locations);
-
-            // Devices
-            const devices = {};
-            Object.values(sessions).forEach(s => {
                 devices[s.device] = (devices[s.device] || 0) + 1;
-            });
-            document.getElementById('devicesList').innerHTML = createTable(devices);
-
-            // Browsers
-            const browsers = {};
-            Object.values(sessions).forEach(s => {
                 browsers[s.browser] = (browsers[s.browser] || 0) + 1;
             });
+            
+            document.getElementById('sourcesList').innerHTML = createTable(sources);
+            document.getElementById('locationsList').innerHTML = createTable(locations);
+            document.getElementById('devicesList').innerHTML = createTable(devices);
             document.getElementById('browsersList').innerHTML = createTable(browsers);
         });
 
@@ -448,5 +475,4 @@
         initMap();
     </script>
 </body>
-
 </html>
