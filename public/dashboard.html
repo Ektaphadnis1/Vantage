@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,9 +7,7 @@
     <script src="/socket.io/socket.io.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -121,7 +118,7 @@
             gap: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         .theme-toggle:hover {
@@ -158,17 +155,9 @@
         }
 
         @keyframes gradientShift {
-            0% {
-                background-position: 0% 50%;
-            }
-
-            50% {
-                background-position: 100% 50%;
-            }
-
-            100% {
-                background-position: 0% 50%;
-            }
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .header p {
@@ -202,17 +191,8 @@
         }
 
         @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-
-            50% {
-                opacity: 0.5;
-                transform: scale(1.2);
-            }
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
         }
 
         /* Active Sessions Hero Card */
@@ -404,7 +384,6 @@
             .insight-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
-
             .hero-number {
                 font-size: 64px;
             }
@@ -414,28 +393,23 @@
             .insight-grid {
                 grid-template-columns: 1fr;
             }
-
             .hero-number {
                 font-size: 48px;
             }
-
             .header h1 {
                 font-size: 2rem;
             }
-
             .theme-toggle {
                 top: 10px;
                 right: 10px;
                 padding: 5px 12px;
             }
-
             .theme-toggle .toggle-text {
                 display: none;
             }
         }
     </style>
 </head>
-
 <body>
     <!-- Theme Toggle Button -->
     <div class="theme-toggle" id="themeToggle">
@@ -474,36 +448,28 @@
             <div class="insight-card">
                 <div class="card-icon">🔗</div>
                 <div class="card-title">TRAFFIC SOURCES</div>
-                <div id="sourcesList">
-                    <div class="no-data">No data yet</div>
-                </div>
+                <div id="sourcesList"><div class="no-data">No data yet</div></div>
             </div>
 
             <!-- Top Locations -->
             <div class="insight-card">
                 <div class="card-icon">📍</div>
                 <div class="card-title">TOP LOCATIONS</div>
-                <div id="locationsList">
-                    <div class="no-data">No data yet</div>
-                </div>
+                <div id="locationsList"><div class="no-data">No data yet</div></div>
             </div>
 
             <!-- Devices -->
             <div class="insight-card">
                 <div class="card-icon">📱</div>
                 <div class="card-title">DEVICES</div>
-                <div id="devicesList">
-                    <div class="no-data">No data yet</div>
-                </div>
+                <div id="devicesList"><div class="no-data">No data yet</div></div>
             </div>
 
             <!-- Browsers -->
             <div class="insight-card">
                 <div class="card-icon">🌐</div>
                 <div class="card-title">BROWSERS</div>
-                <div id="browsersList">
-                    <div class="no-data">No data yet</div>
-                </div>
+                <div id="browsersList"><div class="no-data">No data yet</div></div>
             </div>
         </div>
     </div>
@@ -519,7 +485,7 @@
             const body = document.body;
             const themeIcon = document.getElementById('themeIcon');
             const themeText = document.getElementById('themeText');
-
+            
             if (savedTheme === 'dark') {
                 body.classList.add('dark');
                 themeIcon.textContent = '🌞';
@@ -535,17 +501,17 @@
             const body = document.body;
             const themeIcon = document.getElementById('themeIcon');
             const themeText = document.getElementById('themeText');
-
+            
             if (body.classList.contains('dark')) {
                 body.classList.remove('dark');
                 localStorage.setItem('dashboardTheme', 'light');
-                themeIcon.textContent = '🌙';
-                themeText.textContent = 'Dark Mode';
+                themeIcon.textContent = '🌞';
+                themeText.textContent = 'Light Mode';
             } else {
                 body.classList.add('dark');
                 localStorage.setItem('dashboardTheme', 'dark');
-                themeIcon.textContent = '🌞';
-                themeText.textContent = 'Light Mode';
+                themeIcon.textContent = '🌙';
+                themeText.textContent = 'Dark Mode';
             }
         }
 
@@ -572,7 +538,7 @@
                 'Ahmedabad': [23.0225, 72.5714],
                 'Jaipur': [26.9124, 75.7873]
             };
-
+            
             for (const [city, coords] of Object.entries(locationMap)) {
                 if (location.toLowerCase().includes(city.toLowerCase())) {
                     return coords;
@@ -586,7 +552,7 @@
                 map.removeLayer(markers[id]);
             }
             markers = {};
-
+            
             let locationCounts = {};
             Object.values(sessions).forEach(session => {
                 const location = session.location;
@@ -594,7 +560,7 @@
                     locationCounts[location] = (locationCounts[location] || 0) + 1;
                 }
             });
-
+            
             for (const [location, count] of Object.entries(locationCounts)) {
                 const coords = getCoordinatesFromLocation(location);
                 const marker = L.marker(coords).addTo(map);
@@ -612,7 +578,7 @@
             }
             let html = '<table class="insight-table">';
             for (const [key, value] of Object.entries(data)) {
-                html += '<tr>';
+                html += '<table>';
                 html += '<td>' + key + '</td>';
                 html += '<td>' + value + '</td>';
                 html += '</tr>';
@@ -627,12 +593,12 @@
 
         socket.on('session-details', (sessions) => {
             updateMap(sessions);
-
+            
             const sources = {};
             const locations = {};
             const devices = {};
             const browsers = {};
-
+            
             Object.values(sessions).forEach(s => {
                 sources[s.source] = (sources[s.source] || 0) + 1;
                 if (s.location && s.location !== 'Unknown') {
@@ -641,7 +607,7 @@
                 devices[s.device] = (devices[s.device] || 0) + 1;
                 browsers[s.browser] = (browsers[s.browser] || 0) + 1;
             });
-
+            
             document.getElementById('sourcesList').innerHTML = createTable(sources);
             document.getElementById('locationsList').innerHTML = createTable(locations);
             document.getElementById('devicesList').innerHTML = createTable(devices);
@@ -655,5 +621,4 @@
         initMap();
     </script>
 </body>
-
 </html>
