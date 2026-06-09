@@ -15,12 +15,71 @@
             box-sizing: border-box;
         }
 
+        /* Theme Variables - Light Mode (Default) */
+        :root {
+            --bg-gradient-start: #f5f7fa;
+            --bg-gradient-end: #e4e8f0;
+            --glow-color: rgba(59, 130, 246, 0.08);
+            --hero-bg: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.05));
+            --hero-border: rgba(139, 92, 246, 0.2);
+            --hero-shadow: rgba(139, 92, 246, 0.1);
+            --hero-label: #7c3aed;
+            --hero-number-start: #1f2937;
+            --hero-number-end: #4b5563;
+            --hero-sub: #6b7280;
+            --map-card-bg: rgba(255, 255, 255, 0.8);
+            --map-card-border: rgba(139, 92, 246, 0.15);
+            --map-header-color: #1f2937;
+            --map-bg: #eef2ff;
+            --map-note: #9ca3af;
+            --insight-card-bg: rgba(255, 255, 255, 0.9);
+            --insight-card-border: rgba(139, 92, 246, 0.1);
+            --insight-card-hover-bg: rgba(255, 255, 255, 1);
+            --card-title-color: #6b7280;
+            --table-text-color: #374151;
+            --table-border: rgba(0, 0, 0, 0.05);
+            --no-data-color: #9ca3af;
+            --header-p-color: #6b7280;
+            --live-badge-bg: rgba(239, 68, 68, 0.1);
+            --live-badge-text: #dc2626;
+        }
+
+        /* Dark Mode Variables */
+        body.dark {
+            --bg-gradient-start: #0a0a0a;
+            --bg-gradient-end: #030014;
+            --glow-color: rgba(102, 126, 234, 0.15);
+            --hero-bg: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.1));
+            --hero-border: rgba(139, 92, 246, 0.3);
+            --hero-shadow: rgba(139, 92, 246, 0.3);
+            --hero-label: #a78bfa;
+            --hero-number-start: #fff;
+            --hero-number-end: #c4b5fd;
+            --hero-sub: #5b6e8c;
+            --map-card-bg: rgba(15, 15, 25, 0.7);
+            --map-card-border: rgba(255, 255, 255, 0.08);
+            --map-header-color: #e0e0e0;
+            --map-bg: #0a0a10;
+            --map-note: #4a5568;
+            --insight-card-bg: rgba(12, 12, 20, 0.8);
+            --insight-card-border: rgba(255, 255, 255, 0.06);
+            --insight-card-hover-bg: rgba(18, 18, 30, 0.9);
+            --card-title-color: #9ca3af;
+            --table-text-color: #cbd5e1;
+            --table-border: rgba(255, 255, 255, 0.05);
+            --no-data-color: #4a5568;
+            --header-p-color: #6b7280;
+            --live-badge-bg: rgba(239, 68, 68, 0.15);
+            --live-badge-text: #f87171;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
-            background: radial-gradient(circle at 20% 50%, #0a0a0a, #030014);
+            background: radial-gradient(circle at 20% 50%, var(--bg-gradient-start), var(--bg-gradient-end));
             min-height: 100vh;
             padding: 30px 20px;
             position: relative;
+            transition: background 0.3s ease;
         }
 
         /* Animated background glow */
@@ -31,7 +90,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: radial-gradient(circle at 80% 30%, rgba(102, 126, 234, 0.15), transparent 60%);
+            background: radial-gradient(circle at 80% 30%, var(--glow-color), transparent 60%);
             pointer-events: none;
             z-index: 0;
         }
@@ -41,6 +100,40 @@
             margin: 0 auto;
             position: relative;
             z-index: 1;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: var(--insight-card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--hero-border);
+            border-radius: 50px;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.05);
+            border-color: #8b5cf6;
+        }
+
+        .theme-toggle .toggle-icon {
+            font-size: 1.2rem;
+        }
+
+        .theme-toggle .toggle-text {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--table-text-color);
         }
 
         /* Header */
@@ -68,7 +161,7 @@
         }
 
         .header p {
-            color: #6b7280;
+            color: var(--header-p-color);
             margin-top: 8px;
             font-size: 0.9rem;
         }
@@ -77,9 +170,9 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: rgba(239, 68, 68, 0.15);
+            background: var(--live-badge-bg);
             border: 1px solid rgba(239, 68, 68, 0.4);
-            color: #f87171;
+            color: var(--live-badge-text);
             padding: 4px 14px;
             border-radius: 40px;
             font-size: 12px;
@@ -104,24 +197,24 @@
 
         /* Active Sessions Hero Card */
         .hero-card {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.1));
+            background: var(--hero-bg);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(139, 92, 246, 0.3);
+            border: 1px solid var(--hero-border);
             border-radius: 40px;
             padding: 45px 30px;
             text-align: center;
             margin-bottom: 35px;
-            box-shadow: 0 20px 40px -20px rgba(139, 92, 246, 0.3);
+            box-shadow: 0 20px 40px -20px var(--hero-shadow);
             transition: all 0.3s;
         }
 
         .hero-card:hover {
             border-color: rgba(139, 92, 246, 0.6);
-            box-shadow: 0 25px 50px -20px rgba(139, 92, 246, 0.5);
+            box-shadow: 0 25px 50px -20px var(--hero-shadow);
         }
 
         .hero-label {
-            color: #a78bfa;
+            color: var(--hero-label);
             font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 3px;
@@ -132,7 +225,7 @@
         .hero-number {
             font-size: 96px;
             font-weight: 800;
-            background: linear-gradient(135deg, #fff, #c4b5fd);
+            background: linear-gradient(135deg, var(--hero-number-start), var(--hero-number-end));
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
@@ -141,16 +234,16 @@
         }
 
         .hero-sub {
-            color: #5b6e8c;
+            color: var(--hero-sub);
             font-size: 0.85rem;
             letter-spacing: 1px;
         }
 
         /* Map Card */
         .map-card {
-            background: rgba(15, 15, 25, 0.7);
+            background: var(--map-card-bg);
             backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--map-card-border);
             border-radius: 28px;
             padding: 20px;
             margin-bottom: 35px;
@@ -171,7 +264,7 @@
         }
 
         .map-header h3 {
-            color: #e0e0e0;
+            color: var(--map-header-color);
             font-size: 1.1rem;
             font-weight: 500;
         }
@@ -184,12 +277,12 @@
             height: 360px;
             width: 100%;
             border-radius: 20px;
-            background: #0a0a10;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: var(--map-bg);
+            border: 1px solid var(--map-card-border);
         }
 
         .map-note {
-            color: #4a5568;
+            color: var(--map-note);
             font-size: 11px;
             margin-top: 12px;
             text-align: center;
@@ -204,9 +297,9 @@
         }
 
         .insight-card {
-            background: rgba(12, 12, 20, 0.8);
+            background: var(--insight-card-bg);
             backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--insight-card-border);
             border-radius: 24px;
             padding: 22px 18px;
             transition: all 0.35s ease;
@@ -233,7 +326,7 @@
         .insight-card:hover {
             transform: translateY(-6px);
             border-color: rgba(139, 92, 246, 0.3);
-            background: rgba(18, 18, 30, 0.9);
+            background: var(--insight-card-hover-bg);
         }
 
         .card-icon {
@@ -242,7 +335,7 @@
         }
 
         .card-title {
-            color: #9ca3af;
+            color: var(--card-title-color);
             font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 1.5px;
@@ -257,7 +350,7 @@
         }
 
         .insight-table tr {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid var(--table-border);
         }
 
         .insight-table td {
@@ -266,7 +359,7 @@
         }
 
         .insight-table td:first-child {
-            color: #cbd5e1;
+            color: var(--table-text-color);
             font-weight: 400;
         }
 
@@ -281,7 +374,7 @@
 
         .no-data {
             text-align: center;
-            color: #4a5568;
+            color: var(--no-data-color);
             padding: 20px 0;
             font-size: 0.85rem;
         }
@@ -306,10 +399,24 @@
             .header h1 {
                 font-size: 2rem;
             }
+            .theme-toggle {
+                top: 10px;
+                right: 10px;
+                padding: 5px 12px;
+            }
+            .theme-toggle .toggle-text {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Theme Toggle Button -->
+    <div class="theme-toggle" id="themeToggle">
+        <span class="toggle-icon" id="themeIcon">🌞</span>
+        <span class="toggle-text" id="themeText">Light Mode</span>
+    </div>
+
     <div class="container">
         <!-- Header -->
         <div class="header">
@@ -372,6 +479,45 @@
         let map;
         let markers = {};
 
+        // Theme Toggle Functionality
+        function initTheme() {
+            const savedTheme = localStorage.getItem('dashboardTheme');
+            const body = document.body;
+            const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+            
+            if (savedTheme === 'dark') {
+                body.classList.add('dark');
+                themeIcon.textContent = '🌙';
+                themeText.textContent = 'Dark Mode';
+            } else {
+                body.classList.remove('dark');
+                themeIcon.textContent = '🌞';
+                themeText.textContent = 'Light Mode';
+            }
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+            
+            if (body.classList.contains('dark')) {
+                body.classList.remove('dark');
+                localStorage.setItem('dashboardTheme', 'light');
+                themeIcon.textContent = '🌞';
+                themeText.textContent = 'Light Mode';
+            } else {
+                body.classList.add('dark');
+                localStorage.setItem('dashboardTheme', 'dark');
+                themeIcon.textContent = '🌙';
+                themeText.textContent = 'Dark Mode';
+            }
+        }
+
+        document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+        initTheme();
+
         function initMap() {
             map = L.map('map').setView([20.5937, 78.9629], 5);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -432,7 +578,7 @@
             }
             let html = '<table class="insight-table">';
             for (const [key, value] of Object.entries(data)) {
-                html += '<tr>';
+                html += '<table>';
                 html += '<td>' + key + '</td>';
                 html += '<td>' + value + '</td>';
                 html += '</tr>';
