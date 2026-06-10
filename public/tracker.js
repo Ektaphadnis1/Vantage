@@ -50,6 +50,14 @@ async function getLocation() {
 // LIVE SERVER URL
 const API_BASE_URL = 'https://vantage-dashboard-skto.onrender.com';
 
+// Track page view
+function trackPageView() {
+    const sessionId = getSessionId();
+    const page = window.location.pathname;
+    fetch(`${API_BASE_URL}/pageview?sessionId=${sessionId}&page=${encodeURIComponent(page)}`)
+        .catch(err => console.log("Page view tracking error:", err));
+}
+
 // Track when visitor arrives
 async function trackVisit() {
     const sessionId = getSessionId();
@@ -69,7 +77,7 @@ function trackLeave() {
     fetch(`${API_BASE_URL}/leave?sessionId=${sessionId}`);
 }
 
-// Send heartbeat every 15 seconds (more frequent)
+// Send heartbeat every 15 seconds
 let heartbeatInterval;
 let isLeaving = false;
 
@@ -80,7 +88,7 @@ function startHeartbeat() {
             fetch(`${API_BASE_URL}/heartbeat?sessionId=${sessionId}`);
             console.log('Heartbeat sent');
         }
-    }, 15000); // Every 15 seconds
+    }, 15000);
 }
 
 function stopHeartbeat() {
@@ -103,20 +111,15 @@ window.addEventListener('pagehide', () => {
     stopHeartbeat();
 });
 
-// Also try to send leave when page is unloaded
 window.addEventListener('unload', () => {
     isLeaving = true;
     trackLeave();
     stopHeartbeat();
 });
 
-// Handle page visibility change (tab switch)
+// Handle page visibility change
 document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-        // Tab hidden - reduce heartbeat frequency or keep as is
-        console.log('Tab hidden');
-    } else {
-        // Tab visible again - send immediate heartbeat
+    if (!document.hidden) {
         const sessionId = getSessionId();
         fetch(`${API_BASE_URL}/heartbeat?sessionId=${sessionId}`);
         console.log('Tab visible, heartbeat sent');
@@ -127,6 +130,7 @@ document.addEventListener('visibilitychange', () => {
 async function init() {
     await trackVisit();
     startHeartbeat();
+    trackPageView(); // Track initial page view
 }
 
 init();
